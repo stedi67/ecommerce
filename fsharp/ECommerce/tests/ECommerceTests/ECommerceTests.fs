@@ -1,6 +1,7 @@
 module Tests
 
 open Expecto
+open TaxLib
 
 [<Tests>]
 let tests =

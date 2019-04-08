@@ -1,4 +1,4 @@
-# fsharp-stuff
+# fsharp
 
 some sample code to try out domain modeling with fsharp (on dotnet)
 
