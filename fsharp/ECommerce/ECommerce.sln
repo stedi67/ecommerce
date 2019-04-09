@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{64DF7F89-EFF8-48DB-8A62-8FBBCB69754C}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TaxLib", "src\TaxLib\TaxLib.fsproj", "{0A47FE8A-B887-4DE3-8AE4-AFFD989CC209}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Libs", "src\Libs\Libs.fsproj", "{0A47FE8A-B887-4DE3-8AE4-AFFD989CC209}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DE24EB0A-1351-48DA-B228-29EF77D9CA9F}"
 EndProject

@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="TaxLib.fs" />
+    <Compile Include="TaxLibApi.fs" />
   </ItemGroup>
 
 </Project>
