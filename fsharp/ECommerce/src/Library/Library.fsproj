@@ -5,8 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="TaxLib.fs" />
-    <Compile Include="TaxLibApi.fs" />
+    <Compile Include="Library.fs" />
   </ItemGroup>
 
 </Project>
