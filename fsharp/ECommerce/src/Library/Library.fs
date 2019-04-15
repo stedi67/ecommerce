@@ -168,6 +168,65 @@ module TaxLib =
             | _ -> None
 
 
+module Money =
+
+    type ISOCurrencyCode =
+        | EUR
+        | USD
+        | GBP
+        | CAD
+        | CHF
+        | JPY
+        | AUD
+        | NOK
+
+    type Currency =
+        { Code: ISOCurrencyCode
+          Exponent: int }  
+
+    type Money =
+        { Amount: decimal
+          Currency: Currency }
+
+module Discount =
+
+    open Money
+
+    type DiscountType =
+        | Manual
+        | Campaign
+
+    type DiscountValue =
+        | DiscountFactor of decimal
+        | AbsoluteDiscount of Money
+
+    type Discount = 
+        { Type: DiscountType
+          Value: DiscountValue }
+
+
+module Price =
+
+    open Discount
+    open Money
+    open TaxLib
+
+    type Price =
+        | Net of Money
+        | Gross of Money
+
+    type PriceEvent =
+        | CatalogPrice of Price
+        | AppliedUnitDiscount of Discount
+        | AppliedGlobalDiscount of Discount
+
+    type LineItemPrice =
+        { UnitPrice: Price
+          Amount: int
+          Tax: TaxInfo
+          EventLog: PriceEvent list }
+
+            
 // public api for the TaxLib
 module TaxLibApi =
 
