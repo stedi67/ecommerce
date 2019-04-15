@@ -12,6 +12,11 @@ module TaxAddress =
         State: StateCountry
     }
 
+    type CountryAndZip = {
+        CountryCode: ISOCountryCode
+        ZipCode: ZipCode
+    }
+
     type CountryAndStateAndZip = {
         CountryCode: ISOCountryCode
         State: StateCountry
@@ -21,13 +26,16 @@ module TaxAddress =
     type TaxAddress =
         | Country of ISOCountryCode
         | CountryAndState of CountryAndState
+        | CountryAndZip of CountryAndZip
         | CountryAndStateAndZip of CountryAndStateAndZip
+
 
     let createCountry countryCode =
         if String.length countryCode = 2 then
             Ok (countryCode.ToLower() |> ISOCountryCode |> Country)
         else
             Error "Country Code needs to be a 2 char ISO country code"
+
 
     let createState state =
         if String.length state <> 0 then
@@ -50,6 +58,7 @@ module TaxAddress =
         match (ccResult, stateOption, zipOption) with
             | (Ok (Country cc), None, None) -> ccResult
             | (Ok (Country cc), Some st, None) -> Ok (CountryAndState {CountryCode=cc; State=st})
+            | (Ok (Country cc), None, Some z) -> Ok (CountryAndZip {CountryCode=cc; ZipCode=z})
             | (Ok (Country cc), Some st, Some z) ->  Ok (CountryAndStateAndZip {CountryCode=cc; State=st; ZipCode=z})
             | _ -> ccResult
 
@@ -89,8 +98,14 @@ module TaxLib =
         ZipCodes: ZipCode list
     }
 
+    type OneCountryWithZips = {
+        CountryCode: ISOCountryCode
+        ZipCodes: ZipCode list
+    }
+
     type TaxZone =
         | OneCountryOneStateWithZips of OneCountryOneStateWithZips
+        | OneCountryWithZips of OneCountryWithZips
         | OneCountryOneState of OneCountryOneState
         | OneCountry of ISOCountryCode
         | SeveralCountries of ISOCountryCode list
@@ -127,18 +142,35 @@ module TaxLib =
                 cc = occ
             | (Country cc, OneCountryOneStateWithZips {CountryCode = occ; State = state; ZipCodes = _}) ->
                 cc = occ
+            | (Country cc, OneCountryWithZips {CountryCode = occ; ZipCodes = _}) ->
+                cc = occ
+
             | (CountryAndState {CountryCode = cc; State = state}, OneCountry occ) ->
                 cc = occ
             | (CountryAndState {CountryCode = cc; State = state}, SeveralCountries ccList) ->
                 List.contains cc ccList
             | (CountryAndState {CountryCode = cc; State = state}, OneCountryOneStateWithZips {CountryCode = occ; State = ostate; ZipCodes = _}) ->
                 cc = occ && state = ostate
+            | (CountryAndState {CountryCode = cc; State = state}, OneCountryWithZips {CountryCode = occ; ZipCodes = _}) ->
+                false
+
+            | (CountryAndZip {CountryCode = cc; ZipCode = zip}, OneCountry occ) ->
+                cc = occ
+            | (CountryAndZip {CountryCode = cc; ZipCode = zip}, SeveralCountries ccList) ->
+                List.contains cc ccList
+            | (CountryAndZip {CountryCode = cc; ZipCode = zip}, OneCountryWithZips {CountryCode = occ; ZipCodes = zipList}) ->
+                cc = occ && List.contains zip zipList
+            | (CountryAndZip {CountryCode = cc; ZipCode = zip}, OneCountryOneStateWithZips {CountryCode = occ; State = _; ZipCodes = zipList}) ->
+                cc = occ && List.contains zip zipList
+
             | (CountryAndStateAndZip {CountryCode = cc; State = state; ZipCode = zip}, OneCountry occ) ->
                 cc = occ
             | (CountryAndStateAndZip {CountryCode = cc; State = state; ZipCode = zip}, SeveralCountries ccList) ->
                 List.contains cc ccList
             | (CountryAndStateAndZip {CountryCode = cc; State = state; ZipCode = zip}, OneCountryOneStateWithZips {CountryCode = occ; State = ostate; ZipCodes = zipList}) ->
                 cc = occ && state = ostate && List.contains zip zipList
+            | (CountryAndStateAndZip {CountryCode = cc; State = state; ZipCode = zip}, OneCountryWithZips {CountryCode = occ; ZipCodes = zipList}) ->
+                cc = occ && List.contains zip zipList
             | (_, RestOfWorld) -> true
             | (_, _) -> false
 
