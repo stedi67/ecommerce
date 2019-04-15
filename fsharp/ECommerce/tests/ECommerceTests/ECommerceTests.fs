@@ -8,7 +8,7 @@ let tests =
     testList "Tax Tests" [
         test "de" {
             let res = createTaxAddress "de" "" ""
-            let expected = Ok (Country (ISOCountryCode "de"))
+            let expected = Ok {Country=ISOCountryCode "de"; State=None; Zip=None}
             Expect.equal res expected "create german tax address"
         }
 

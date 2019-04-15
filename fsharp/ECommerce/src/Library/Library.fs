@@ -7,11 +7,10 @@ module TaxAddress =
 
     type State = State of string
 
-    type TaxAddress = {
-        country: ISOCountryCode
-        state: State option
-        zip: Zip option
-    }
+    type TaxAddress =
+        { Country: ISOCountryCode
+          State: State option
+          Zip: Zip option }
 
     let createCountry countryCode =
         if String.length countryCode = 2 then
@@ -39,8 +38,8 @@ module TaxAddress =
         let state = createState state
         let zip = createZip zip
         match ccResult with
-            | Ok country -> Ok {country=country; state=state; zip=zip}
-            | Error error -> Error error
+        | Ok country -> Ok {Country=country; State=state; Zip=zip}
+        | Error error -> Error error
 
 
 module TaxLib =
@@ -50,34 +49,32 @@ module TaxLib =
     type Account = Account of string
 
     type ProductType =
-      | Physical
-      | NonPhysical
-      | Software
-      | Service
-      | Shipment
-      | Book
+        | Physical
+        | NonPhysical
+        | Software
+        | Service
+        | Shipment
+        | Book
 
     type ProductInfo = ProductType list
 
     type CustomerType =
-      | B2C
-      | B2B
-      | IC
+        | B2C
+        | B2B
+        | IC
 
     type TaxRate = TaxRate of decimal
 
     type TaxZoneLabel = TaxZoneLabel of string
 
-    type OneCountryOneState = {
-        country: ISOCountryCode
-        state: State
-    }
+    type OneCountryOneState =
+        { Country: ISOCountryCode
+          State: State }
 
-    type OneCountryOneStateWithZips = {
-        country: ISOCountryCode
-        state: State
-        zipCodes: Zip list
-    }
+    type OneCountryOneStateWithZips =
+        { Country: ISOCountryCode
+          State: State
+          ZipCodes: Zip list }
 
     type TaxZone =
         | OneCountryOneStateWithZips of OneCountryOneStateWithZips
@@ -89,41 +86,39 @@ module TaxLib =
 
     type TaxInfoId = TaxInfoId of int
 
-    type TaxInfo = {
-        id: TaxInfoId
-        zone: TaxZone
-        customerType: CustomerType
-        productType: ProductType
-        rate: TaxRate
-    }
+    type TaxInfo =
+        { Id: TaxInfoId
+          Zone: TaxZone
+          CustomerType: CustomerType
+          ProductType: ProductType
+          Rate: TaxRate }
 
     type TaxInfoList = TaxInfo list
 
-    type TaxQuery = {
-        address: TaxAddress
-        productInfo: ProductType list
-        customerType: CustomerType
-    }
+    type TaxQuery =
+        { Address: TaxAddress
+          ProductInfo: ProductType list
+          CustomerType: CustomerType }
 
     let addressMatchesZone address taxInfo =
-        match taxInfo.zone with
+        match taxInfo.Zone with
         | RestOfWorld -> true
         | SeveralCountries ccList ->
             match address with
-            | {country = cc; state = _; zip = _} ->
+            | {Country = cc; State = _; Zip = _} ->
                     List.contains cc ccList
         | OneCountry occ ->
             match address with
-            | {country = cc; state = _; zip = _} ->
+            | {Country = cc; State = _; Zip = _} ->
                     cc = occ
-        | OneCountryOneState {country = occ; state = ostate} ->
+        | OneCountryOneState {Country = occ; State = ostate} ->
             match address with
-            | {country = cc; state = Some state; zip = _} ->
+            | {Country = cc; State = Some state; Zip = _} ->
                 cc = occ && ostate = state
             | _ -> false
-        | OneCountryOneStateWithZips {country = occ; state = ostate; zipCodes = zipCodes} ->
+        | OneCountryOneStateWithZips {Country = occ; State = ostate; ZipCodes = zipCodes} ->
             match address with
-            | {country = cc; state = Some state; zip = Some zip} ->
+            | {Country = cc; State = Some state; Zip = Some zip} ->
                 cc = occ && ostate = state && List.contains zip zipCodes
             | _ -> false
 
@@ -132,7 +127,7 @@ module TaxLib =
         // the tax info should be ordered by importance since
         // several infos can map a query.
         let zoneNumber =
-            match taxInfo.zone with
+            match taxInfo.Zone with
             | OneCountryOneStateWithZips _ -> 10
             | OneCountryOneState _ -> 20
             | OneCountry _ -> 30
@@ -140,7 +135,7 @@ module TaxLib =
             | RestOfWorld -> 50
 
         let productNumber =
-            match taxInfo.productType with
+            match taxInfo.ProductType with
             | Book -> 10
             | Service -> 10
             | Shipment -> 10
@@ -153,12 +148,21 @@ module TaxLib =
 
     let findBestTaxMatch : FindBestTaxMatch =
         fun taxInfoList taxQuery ->
+
+            let cmpCustomerType = fun (info:TaxInfo) -> info.CustomerType = taxQuery.CustomerType
+
+            let cmpAddress info =
+                addressMatchesZone taxQuery.Address info
+
+            let cmpProduct info =
+                List.contains info.ProductType taxQuery.ProductInfo
+
             let resultList =
                 taxInfoList
-                    |> List.filter (fun info -> info.customerType = taxQuery.customerType)
-                    |> List.filter (fun info -> addressMatchesZone taxQuery.address info)
-                    |> List.filter (fun info -> List.contains info.productType taxQuery.productInfo)
-                    |> List.sortBy taxInfoOrder
+                |> List.filter cmpCustomerType
+                |> List.filter cmpAddress
+                |> List.filter cmpProduct
+                |> List.sortBy taxInfoOrder
             match resultList with
             | fst::_ -> Some fst
             | _ -> None
@@ -169,15 +173,13 @@ module TaxLibApi =
 
     // DTO: Data Transfer Object
 
-    type TaxInfoDTO = {
-        id: int
-        rate: decimal
-    }
+    type TaxInfoDTO =
+        { Id: int
+          Rate: decimal }
 
-    type TaxQueryDTO = {
-        countryCode: string
-        state: string option
-        zipCode: string option
-        productInfo: string list
-        customerType: string
-    }
+    type TaxQueryDTO =
+        { ISOCountryCode: string
+          State: string option
+          Zip: string option
+          ProductInfo: string list
+          CustomerType: string }
