@@ -42,7 +42,7 @@ module TaxAddress =
         | Error error -> Error error
 
 
-module TaxLib =
+module Tax =
 
     open TaxAddress
 
@@ -188,6 +188,7 @@ module Money =
         { Amount: decimal
           Currency: Currency }
 
+
 module Discount =
 
     open Money
@@ -209,11 +210,15 @@ module Price =
 
     open Discount
     open Money
-    open TaxLib
+    open Tax
+
+    type NetPrice = Net of Money
+
+    type GrossPrice = Gross of Money
 
     type Price =
-        | Net of Money
-        | Gross of Money
+        | NetPrice
+        | GrossPrice
 
     type PriceEvent =
         | CatalogPrice of Price
@@ -222,13 +227,94 @@ module Price =
 
     type LineItemPrice =
         { UnitPrice: Price
-          Amount: int
+          Count: int
           Tax: TaxInfo
           EventLog: PriceEvent list }
 
             
-// public api for the TaxLib
-module TaxLibApi =
+// Worldpay payments
+module Payment =
+
+    open Money
+
+    type Amount = Amount of Money
+
+    type PaymentId = PaymentId of string
+
+    type PaymentEvent =
+        | PaymentRequested of Amount
+        | PaymentAuthorized
+        | PaymentCaptured
+        | PaymentRefunded of Amount
+
+    type PaymentMethod =
+        | CreditCart
+        | PayPal
+
+    type Payment =
+        { PaymentId: PaymentId
+          PaymentMethod: PaymentMethod
+          PaymentEvents: PaymentEvent list }
+
+
+module Shipment =
+
+    type Tracking = Tracking of string
+
+    type ShipmentId = ShipmentId of int
+
+    type ShipmentProvider =
+        | Rhiem
+        | Shipwire
+
+    type ShipmentEvent =
+        | ShipmentRequested
+        | ShipmentAcknowledged
+        | ShipmentShipped of Tracking list
+
+
+    type Shipment =
+        { ShipmentId: ShipmentId
+          ShipmentProvider: ShipmentProvider
+          ShipmentEvents: ShipmentEvent list}
+
+
+module Order =
+
+    open Price
+    open Money
+    open Tax
+
+    type ArticleCode = ArticleCode of string
+    type OrderId = OrderId of int
+
+    type OrderItem =
+        { ArticleCode: ArticleCode
+          Price: LineItemPrice }
+
+    type TaxGroup =
+        { TaxInfo: TaxInfo
+          Amount: Money
+          BasedOnNetPrice: Money
+        }
+
+    type OrderSummary =
+        { NetPrice: NetPrice
+          GrossPrice: GrossPrice
+          TaxGroups: TaxGroup list }
+
+    type RawOrder =
+        { OrderId: OrderId
+          OrderItems: OrderItem list }
+
+    type Order =
+        | OpenOrder of RawOrder
+        | OrderedOrder of RawOrder
+        | ClosedOrder of RawOrder
+
+
+// public api for the Tax
+module TaxApi =
 
     // DTO: Data Transfer Object
 
